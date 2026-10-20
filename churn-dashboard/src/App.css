@@ -1,0 +1,7 @@
+﻿.glass-card {
+  backdrop-filter: blur(24px);
+}
+
+.shadow-soft {
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+}

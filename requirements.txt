@@ -1,0 +1,10 @@
+# API and analysis runtime dependencies
+fastapi==0.135.1
+uvicorn==0.42.0
+pandas==3.0.3
+numpy==2.3.4
+scikit-learn==1.8.0
+
+# Test dependencies (also used by scripts/test_all.py)
+pytest==9.0.3
+httpx==0.28.1

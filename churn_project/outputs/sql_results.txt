@@ -1,0 +1,14 @@
+Verified KPI reference results — telco_churn.csv
+Recalculated 2026-10-20 using the shared SQL/Python definitions.
+
+Population: 7,043 valid unique customers in the supplied undated snapshot.
+Total customers: 7,043
+Active customers (Churn = No): 5,174
+Already churned customers (Churn = Yes): 1,869
+Observed churn rate: 26.54% (1,869 / 7,043)
+Active monthly revenue exposure: $316,985.75 (active customers only)
+Historical churned monthly charges: $139,130.85 (already churned customers)
+Historical churned revenue share: 30.50% of all MonthlyCharges
+
+Active exposure is descriptive, not expected loss or recoverable revenue.
+Segment groups overlap and must not be summed. No date field is available.
