@@ -32,6 +32,9 @@ from churn_project.python.prediction_service import (
 from churn_project.python.explainability_service import (
     ModelExplainabilityService,
 )
+from churn_project.python.monitoring_service import (
+    DriftMonitoringService,
+)
 from churn_project.python.risk_service import (
     RiskSegmentationService,
 )
@@ -447,6 +450,28 @@ def set_operating_threshold(req: SetThresholdRequest):
         "threshold": req.threshold,
         "message": f"Operating threshold successfully updated to {req.threshold}",
     }
+
+
+@app.get("/api/monitoring/drift")
+def get_data_drift():
+    df = load_dataset()
+    service = get_prediction_service()
+    from sklearn.model_selection import train_test_split
+    from churn_project.python.churn_analysis import CATEGORICAL, NUMERIC, TARGET
+
+    # Reference = 75% train, Current = 25% test or inference batch
+    ref_df, curr_df = train_test_split(df, test_size=0.25, random_state=42, stratify=df[TARGET])
+
+    ref_probs = service.pipeline.predict_proba(ref_df[CATEGORICAL + NUMERIC])[:, 1]
+    curr_probs = service.pipeline.predict_proba(curr_df[CATEGORICAL + NUMERIC])[:, 1]
+
+    monitor = DriftMonitoringService(reference_df=ref_df, reference_probs=ref_probs)
+    report = monitor.check_drift(
+        current_df=curr_df,
+        current_probs=curr_probs,
+        operating_threshold=service.threshold,
+    )
+    return report
 
 
 @app.get("/api/ml-models")
