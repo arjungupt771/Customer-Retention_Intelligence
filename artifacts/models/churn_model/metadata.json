@@ -1,0 +1,63 @@
+{
+  "model_name": "Gradient Boosting",
+  "version": "1.0.0",
+  "created_at": "2026-11-22T07:34:11.632776+00:00",
+  "threshold": 0.22,
+  "target": "Churn",
+  "categorical_features": [
+    "gender",
+    "Partner",
+    "Dependents",
+    "PhoneService",
+    "MultipleLines",
+    "InternetService",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "Contract",
+    "PaperlessBilling",
+    "PaymentMethod"
+  ],
+  "numeric_features": [
+    "SeniorCitizen",
+    "tenure",
+    "MonthlyCharges",
+    "TotalCharges"
+  ],
+  "required_features": [
+    "gender",
+    "Partner",
+    "Dependents",
+    "PhoneService",
+    "MultipleLines",
+    "InternetService",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "Contract",
+    "PaperlessBilling",
+    "PaymentMethod",
+    "SeniorCitizen",
+    "tenure",
+    "MonthlyCharges",
+    "TotalCharges"
+  ],
+  "risk_categories": {
+    "high": {
+      "min_probability": 0.7
+    },
+    "medium": {
+      "min_probability": 0.3
+    },
+    "low": {
+      "min_probability": 0.0
+    }
+  },
+  "sklearn_version": "1.5.3"
+}

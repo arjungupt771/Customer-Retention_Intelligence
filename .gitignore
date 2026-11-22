@@ -41,8 +41,10 @@ dist/
 *.onnx
 
 # Model checkpoints
-checkpoints/
-models/
+/checkpoints/
+/models/
+!artifacts/
+!artifacts/**
 
 # ==============================
 # React / Node.js / Vite

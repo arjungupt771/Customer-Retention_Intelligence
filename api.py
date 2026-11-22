@@ -32,6 +32,10 @@ from churn_project.python.explainability_service import (
 from churn_project.python.risk_service import (
     RiskSegmentationService,
 )
+from churn_project.python.threshold_optimizer import (
+    ThresholdOptimizer,
+    persist_selected_threshold,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -384,6 +388,45 @@ def explain_customer(customer_id: str):
     explainer = get_explainability_service()
     explanation = explainer.explain_instance(match.iloc[0])
     return {"customer_id": customer_id, **explanation}
+
+
+class SetThresholdRequest(BaseModel):
+    threshold: float = Field(..., ge=0.01, le=0.99)
+
+
+@app.get("/api/threshold-analysis")
+def threshold_analysis(
+    missed_churner_cost: float = Query(default=500.0, ge=0),
+    false_positive_cost: float = Query(default=50.0, ge=0),
+    intervention_cost: float = Query(default=25.0, ge=0),
+    step: float = Query(default=0.05, ge=0.01, le=0.2),
+):
+    y_test, probs, current_threshold = get_evaluation_ground_truth_and_probs()
+    optimizer = ThresholdOptimizer(
+        y_true=y_test,
+        y_prob=probs,
+        cost_config={
+            "missed_churner_cost": missed_churner_cost,
+            "false_positive_cost": false_positive_cost,
+            "intervention_cost": intervention_cost,
+        },
+    )
+    result = optimizer.optimize(step=step)
+    result["current_threshold"] = current_threshold
+    return result
+
+
+@app.post("/api/threshold/set")
+def set_operating_threshold(req: SetThresholdRequest):
+    service = get_prediction_service()
+    service.set_threshold(req.threshold)
+    persist_selected_threshold(req.threshold)
+    get_evaluation_ground_truth_and_probs.cache_clear()
+    return {
+        "status": "success",
+        "threshold": req.threshold,
+        "message": f"Operating threshold successfully updated to {req.threshold}",
+    }
 
 
 @app.get("/api/ml-models")
