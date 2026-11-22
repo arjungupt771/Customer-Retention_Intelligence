@@ -19,6 +19,9 @@ from churn_project.python.persistence import (
     get_or_create_model,
     load_model_artifact,
 )
+from churn_project.python.confidence_service import (
+    compute_bootstrap_confidence_intervals,
+)
 from churn_project.python.evaluation_service import (
     compute_comprehensive_diagnostics,
 )
@@ -298,6 +301,23 @@ def model_diagnostics(threshold: float | None = Query(default=None, ge=0.0, le=1
     y_test, probs, default_threshold = get_evaluation_ground_truth_and_probs()
     op_threshold = threshold if threshold is not None else default_threshold
     return compute_comprehensive_diagnostics(y_test, probs, op_threshold)
+
+
+@app.get("/api/model-confidence")
+def model_confidence(
+    threshold: float | None = Query(default=None, ge=0.0, le=1.0),
+    n_bootstraps: int = Query(default=300, ge=50, le=2000),
+    confidence_level: float = Query(default=0.95, ge=0.80, le=0.99),
+):
+    y_test, probs, default_threshold = get_evaluation_ground_truth_and_probs()
+    op_threshold = threshold if threshold is not None else default_threshold
+    return compute_bootstrap_confidence_intervals(
+        y_true=y_test,
+        y_prob=probs,
+        threshold=op_threshold,
+        n_bootstraps=n_bootstraps,
+        confidence_level=confidence_level,
+    )
 
 
 @app.get("/api/risk-distribution")
