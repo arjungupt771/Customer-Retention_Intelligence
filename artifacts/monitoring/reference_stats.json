@@ -1,0 +1,226 @@
+{
+  "total_records": 5282,
+  "numerical_features": {
+    "SeniorCitizen": {
+      "mean": 0.16,
+      "std": 0.37,
+      "min": 0.0,
+      "max": 1.0,
+      "median": 0.0,
+      "missing_rate": 0.0
+    },
+    "tenure": {
+      "mean": 32.36,
+      "std": 24.63,
+      "min": 0.0,
+      "max": 72.0,
+      "median": 29.0,
+      "missing_rate": 0.0
+    },
+    "MonthlyCharges": {
+      "mean": 64.86,
+      "std": 30.17,
+      "min": 18.4,
+      "max": 118.75,
+      "median": 70.5,
+      "missing_rate": 0.0
+    },
+    "TotalCharges": {
+      "mean": 2292.08,
+      "std": 2285.17,
+      "min": 0.0,
+      "max": 8684.8,
+      "median": 1385.3,
+      "missing_rate": 0.0
+    }
+  },
+  "categorical_features": {
+    "gender": {
+      "frequencies": {
+        "Male": 2657,
+        "Female": 2625
+      },
+      "proportions": {
+        "Male": 0.503,
+        "Female": 0.497
+      },
+      "missing_rate": 0.0
+    },
+    "Partner": {
+      "frequencies": {
+        "No": 2749,
+        "Yes": 2533
+      },
+      "proportions": {
+        "No": 0.5204,
+        "Yes": 0.4796
+      },
+      "missing_rate": 0.0
+    },
+    "Dependents": {
+      "frequencies": {
+        "No": 3713,
+        "Yes": 1569
+      },
+      "proportions": {
+        "No": 0.703,
+        "Yes": 0.297
+      },
+      "missing_rate": 0.0
+    },
+    "PhoneService": {
+      "frequencies": {
+        "Yes": 4752,
+        "No": 530
+      },
+      "proportions": {
+        "Yes": 0.8997,
+        "No": 0.1003
+      },
+      "missing_rate": 0.0
+    },
+    "MultipleLines": {
+      "frequencies": {
+        "No": 2519,
+        "Yes": 2233,
+        "No phone service": 530
+      },
+      "proportions": {
+        "No": 0.4769,
+        "Yes": 0.4228,
+        "No phone service": 0.1003
+      },
+      "missing_rate": 0.0
+    },
+    "InternetService": {
+      "frequencies": {
+        "Fiber optic": 2323,
+        "DSL": 1816,
+        "No": 1143
+      },
+      "proportions": {
+        "Fiber optic": 0.4398,
+        "DSL": 0.3438,
+        "No": 0.2164
+      },
+      "missing_rate": 0.0
+    },
+    "OnlineSecurity": {
+      "frequencies": {
+        "No": 2618,
+        "Yes": 1521,
+        "No internet service": 1143
+      },
+      "proportions": {
+        "No": 0.4956,
+        "Yes": 0.288,
+        "No internet service": 0.2164
+      },
+      "missing_rate": 0.0
+    },
+    "OnlineBackup": {
+      "frequencies": {
+        "No": 2300,
+        "Yes": 1839,
+        "No internet service": 1143
+      },
+      "proportions": {
+        "No": 0.4354,
+        "Yes": 0.3482,
+        "No internet service": 0.2164
+      },
+      "missing_rate": 0.0
+    },
+    "DeviceProtection": {
+      "frequencies": {
+        "No": 2305,
+        "Yes": 1834,
+        "No internet service": 1143
+      },
+      "proportions": {
+        "No": 0.4364,
+        "Yes": 0.3472,
+        "No internet service": 0.2164
+      },
+      "missing_rate": 0.0
+    },
+    "TechSupport": {
+      "frequencies": {
+        "No": 2585,
+        "Yes": 1554,
+        "No internet service": 1143
+      },
+      "proportions": {
+        "No": 0.4894,
+        "Yes": 0.2942,
+        "No internet service": 0.2164
+      },
+      "missing_rate": 0.0
+    },
+    "StreamingTV": {
+      "frequencies": {
+        "No": 2076,
+        "Yes": 2063,
+        "No internet service": 1143
+      },
+      "proportions": {
+        "No": 0.393,
+        "Yes": 0.3906,
+        "No internet service": 0.2164
+      },
+      "missing_rate": 0.0
+    },
+    "StreamingMovies": {
+      "frequencies": {
+        "No": 2077,
+        "Yes": 2062,
+        "No internet service": 1143
+      },
+      "proportions": {
+        "No": 0.3932,
+        "Yes": 0.3904,
+        "No internet service": 0.2164
+      },
+      "missing_rate": 0.0
+    },
+    "Contract": {
+      "frequencies": {
+        "Month-to-month": 2907,
+        "Two year": 1268,
+        "One year": 1107
+      },
+      "proportions": {
+        "Month-to-month": 0.5504,
+        "Two year": 0.2401,
+        "One year": 0.2096
+      },
+      "missing_rate": 0.0
+    },
+    "PaperlessBilling": {
+      "frequencies": {
+        "Yes": 3132,
+        "No": 2150
+      },
+      "proportions": {
+        "Yes": 0.593,
+        "No": 0.407
+      },
+      "missing_rate": 0.0
+    },
+    "PaymentMethod": {
+      "frequencies": {
+        "Electronic check": 1772,
+        "Mailed check": 1207,
+        "Bank transfer (automatic)": 1171,
+        "Credit card (automatic)": 1132
+      },
+      "proportions": {
+        "Electronic check": 0.3355,
+        "Mailed check": 0.2285,
+        "Bank transfer (automatic)": 0.2217,
+        "Credit card (automatic)": 0.2143
+      },
+      "missing_rate": 0.0
+    }
+  }
+}

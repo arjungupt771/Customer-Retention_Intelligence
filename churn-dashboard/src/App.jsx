@@ -17,6 +17,7 @@ import {
   YAxis,
 } from 'recharts'
 import {
+  Activity,
   Bell,
   ChevronDown,
   CreditCard,
@@ -26,6 +27,7 @@ import {
   Moon,
   Search,
   ShieldCheck,
+  Sliders,
   Sparkles,
   Sun,
   TrendingUp,
@@ -36,6 +38,11 @@ import ChartCard from './components/ChartCard.jsx'
 import SectionHeader from './components/SectionHeader.jsx'
 import InsightPanel from './components/InsightPanel.jsx'
 import LoadingSkeleton from './components/LoadingSkeleton.jsx'
+import ModelEvaluationView from './components/ModelEvaluationView.jsx'
+import ActionCenterView from './components/ActionCenterView.jsx'
+import ExplainabilityView from './components/ExplainabilityView.jsx'
+import ThresholdOptimizationView from './components/ThresholdOptimizationView.jsx'
+import MonitoringView from './components/MonitoringView.jsx'
 import { buildSegmentParams, formatNumber, getApiErrorMessage, normalizeKeyMetrics } from './segment-utils.js'
 import './App.css'
 
@@ -43,46 +50,88 @@ const navItems = [
   {
     key: 'overview',
     label: 'Overview',
-    description: 'Live performance dashboard',
+    description: 'Executive retention signals',
     icon: <Layers className="h-5 w-5" />,
   },
   {
-    key: 'churn',
-    label: 'Churn insights',
-    description: 'Customer retention signals',
-    icon: <ShieldCheck className="h-5 w-5" />,
-  },
-  {
-    key: 'contracts',
-    label: 'Contracts',
-    description: 'Plan and tenure analysis',
+    key: 'customer-analytics',
+    label: 'Customer Analytics',
+    description: 'Segments, contracts & cohorts',
     icon: <CreditCard className="h-5 w-5" />,
   },
   {
-    key: 'payments',
-    label: 'Payments',
-    description: 'Billing and loyalty trends',
+    key: 'evaluation',
+    label: 'Model Evaluation',
+    description: 'Diagnostics, ROC/PR & lift',
+    icon: <Sparkles className="h-5 w-5" />,
+  },
+  {
+    key: 'action-center',
+    label: 'Retention Action Center',
+    description: 'High-risk targeting & CSV export',
+    icon: <ShieldCheck className="h-5 w-5" />,
+  },
+  {
+    key: 'explainability',
+    label: 'Model Explainability',
+    description: 'SHAP waterfall & live inference',
+    icon: <Sliders className="h-5 w-5" />,
+  },
+  {
+    key: 'optimization',
+    label: 'Threshold Optimization',
+    description: 'Cost curves & trade-offs',
     icon: <TrendingUp className="h-5 w-5" />,
   },
   {
-    key: 'ml',
-    label: 'ML insights',
-    description: 'Model performance & predictions',
-    icon: <Sparkles className="h-5 w-5" />,
+    key: 'monitoring',
+    label: 'Model Monitoring',
+    description: 'Data drift PSI & prediction shift',
+    icon: <Activity className="h-5 w-5" />,
   },
 ]
 
 
 const sectionMeta = {
   overview: {
-    title: 'Overview',
-    subtitle: 'A single-pane view of churn performance, adoption, payments, and machine learning signals.',
+    title: 'Executive Overview',
+    subtitle: 'A single-pane view of portfolio churn performance, risk distribution, and predictive signals.',
     breadcrumbs: ['Home', 'Overview'],
   },
+  'customer-analytics': {
+    title: 'Customer Analytics',
+    subtitle: 'Segment customer cohorts by contract length, tenure, billing method, and heuristic risk.',
+    breadcrumbs: ['Home', 'Customer Analytics'],
+  },
   churn: {
-    title: 'Churn insights',
-    subtitle: 'Understand what drives cancellations so your retention strategy stays proactive.',
-    breadcrumbs: ['Home', 'Churn insights'],
+    title: 'Customer Analytics',
+    subtitle: 'Segment customer cohorts by contract length, tenure, billing method, and heuristic risk.',
+    breadcrumbs: ['Home', 'Customer Analytics'],
+  },
+  evaluation: {
+    title: 'Model Evaluation & Diagnostics',
+    subtitle: 'Confusion matrix, precision-recall curve, ROC curve, lift/gain deciles, and bootstrap confidence intervals.',
+    breadcrumbs: ['Home', 'Model Evaluation'],
+  },
+  'action-center': {
+    title: 'Customer Retention Action Center',
+    subtitle: 'Identify high-risk customer accounts, monitor revenue at risk, apply filters, and export targeting lists.',
+    breadcrumbs: ['Home', 'Retention Action Center'],
+  },
+  explainability: {
+    title: 'SHAP Model Explainability',
+    subtitle: 'Global feature importance attributions, individual customer risk vs protective drivers, and live inference.',
+    breadcrumbs: ['Home', 'Model Explainability'],
+  },
+  optimization: {
+    title: 'Cost-Sensitive Threshold Optimization',
+    subtitle: 'Evaluate operating trade-offs, minimize expected economic cost, and persist production thresholds.',
+    breadcrumbs: ['Home', 'Threshold Optimization'],
+  },
+  monitoring: {
+    title: 'Data Drift & Prediction Monitoring',
+    subtitle: 'Track Population Stability Index (PSI) and Kolmogorov-Smirnov statistics across features and predictions.',
+    breadcrumbs: ['Home', 'Model Monitoring'],
   },
   contracts: {
     title: 'Contracts',
@@ -95,9 +144,9 @@ const sectionMeta = {
     breadcrumbs: ['Home', 'Payments'],
   },
   ml: {
-    title: 'ML insights',
+    title: 'Model Evaluation',
     subtitle: 'Review model health, prediction confidence, and the features that matter most.',
-    breadcrumbs: ['Home', 'ML insights'],
+    breadcrumbs: ['Home', 'Model Evaluation'],
   },
   'data-summary': {
     title: 'Data summary',
@@ -300,6 +349,27 @@ function App() {
       { label: 'Refresh insights', onClick: () => runAnalysis('/api/full-analysis'), variant: 'primary' },
       { label: 'Export PDF', onClick: downloadPdf, variant: 'secondary' },
     ],
+    'customer-analytics': [
+      { label: 'Refresh insights', onClick: () => runAnalysis('/api/full-analysis'), variant: 'primary' },
+      { label: 'Export CSV', onClick: downloadCsv, variant: 'secondary' },
+    ],
+    evaluation: [
+      { label: 'Refresh models', onClick: () => runAnalysis('/api/ml-models'), variant: 'primary' },
+      { label: 'Export CSV', onClick: downloadCsv, variant: 'secondary' },
+    ],
+    'action-center': [
+      { label: 'Refresh summary', onClick: () => runAnalysis('/api/risk-distribution'), variant: 'primary' },
+      { label: 'Export CSV', onClick: downloadCsv, variant: 'secondary' },
+    ],
+    explainability: [
+      { label: 'Refresh SHAP', onClick: () => runAnalysis('/api/explain/global'), variant: 'primary' },
+    ],
+    optimization: [
+      { label: 'Recalculate costs', onClick: () => runAnalysis('/api/threshold-analysis'), variant: 'primary' },
+    ],
+    monitoring: [
+      { label: 'Check drift', onClick: () => runAnalysis('/api/monitoring/drift'), variant: 'primary' },
+    ],
     contracts: [
       { label: 'Refresh contracts', onClick: () => runAnalysis('/api/contract-analysis'), variant: 'primary' },
       { label: 'Export CSV', onClick: downloadCsv, variant: 'secondary' },
@@ -420,6 +490,7 @@ function App() {
           </div>
         )
 
+      case 'customer-analytics':
       case 'churn':
         return (
           <div className="space-y-6">
@@ -601,6 +672,21 @@ function App() {
             </div>
           </div>
         )
+
+      case 'evaluation':
+        return <ModelEvaluationView />
+
+      case 'action-center':
+        return <ActionCenterView />
+
+      case 'explainability':
+        return <ExplainabilityView />
+
+      case 'optimization':
+        return <ThresholdOptimizationView onThresholdUpdated={() => runAnalysis('/api/ml-models')} />
+
+      case 'monitoring':
+        return <MonitoringView />
 
       default:
         return (
