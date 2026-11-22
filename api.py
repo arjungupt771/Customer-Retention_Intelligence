@@ -19,6 +19,9 @@ from churn_project.python.persistence import (
     get_or_create_model,
     load_model_artifact,
 )
+from churn_project.python.evaluation_service import (
+    compute_comprehensive_diagnostics,
+)
 from churn_project.python.prediction_service import (
     PredictionService,
     categorize_risk,
@@ -246,6 +249,26 @@ async def predict_churn(request: Request):
     except Exception as exc:
         logger.exception("Unexpected error during inference: %s", exc)
         raise HTTPException(status_code=500, detail=f"Inference error: {exc}") from exc
+
+
+@lru_cache(maxsize=1)
+def get_evaluation_ground_truth_and_probs() -> tuple[np.ndarray, np.ndarray, float]:
+    df = load_dataset()
+    service = get_prediction_service()
+    from churn_project.python.churn_analysis import CATEGORICAL, NUMERIC, TARGET
+    from sklearn.model_selection import train_test_split
+    X = df[CATEGORICAL + NUMERIC]
+    y = df[TARGET].eq("Yes").astype(int).to_numpy()
+    _, X_test, _, y_test = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
+    probs = service.pipeline.predict_proba(X_test)[:, 1]
+    return y_test, probs, service.threshold
+
+
+@app.get("/api/model-diagnostics")
+def model_diagnostics(threshold: float | None = Query(default=None, ge=0.0, le=1.0)):
+    y_test, probs, default_threshold = get_evaluation_ground_truth_and_probs()
+    op_threshold = threshold if threshold is not None else default_threshold
+    return compute_comprehensive_diagnostics(y_test, probs, op_threshold)
 
 
 @app.get("/api/ml-models")
