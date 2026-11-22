@@ -26,6 +26,9 @@ from churn_project.python.prediction_service import (
     PredictionService,
     categorize_risk,
 )
+from churn_project.python.explainability_service import (
+    ModelExplainabilityService,
+)
 from churn_project.python.risk_service import (
     RiskSegmentationService,
 )
@@ -35,6 +38,15 @@ logger = logging.getLogger(__name__)
 # Global prediction and risk service instances loaded on startup
 prediction_service: PredictionService | None = None
 risk_service: RiskSegmentationService | None = None
+explainability_service: ModelExplainabilityService | None = None
+
+
+def get_explainability_service() -> ModelExplainabilityService:
+    global explainability_service
+    if explainability_service is None:
+        p_svc = get_prediction_service()
+        explainability_service = ModelExplainabilityService(pipeline=p_svc.pipeline)
+    return explainability_service
 
 
 def get_risk_service() -> RiskSegmentationService:
@@ -354,6 +366,24 @@ def action_center_export_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=high_risk_customers.csv"},
     )
+
+
+@app.get("/api/explain/global")
+def explain_global():
+    df = load_dataset()
+    explainer = get_explainability_service()
+    return {"feature_importance": explainer.explain_global(df)}
+
+
+@app.get("/api/explain/{customer_id}")
+def explain_customer(customer_id: str):
+    df = load_dataset()
+    match = df[df.customerID.eq(customer_id.strip())]
+    if match.empty:
+        raise HTTPException(status_code=404, detail=f"Customer ID '{customer_id}' not found")
+    explainer = get_explainability_service()
+    explanation = explainer.explain_instance(match.iloc[0])
+    return {"customer_id": customer_id, **explanation}
 
 
 @app.get("/api/ml-models")
