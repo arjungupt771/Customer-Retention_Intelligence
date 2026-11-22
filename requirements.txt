@@ -4,6 +4,8 @@ uvicorn==0.42.0
 pandas==3.0.3
 numpy==2.3.4
 scikit-learn==1.8.0
+joblib==1.5.3
+shap==0.54.1
 
 # Test dependencies (also used by scripts/test_all.py)
 pytest==9.0.3

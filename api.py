@@ -1,22 +1,54 @@
 """Cached, validated API for the telecom churn portfolio dashboard."""
+import logging
+from contextlib import asynccontextmanager
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from churn_project.python.churn_analysis import (
     build_model_evaluation, clean_dataset, find_dataset, key_metrics,
 )
+from churn_project.python.persistence import (
+    CHURN_MODEL_DIR,
+    get_or_create_model,
+    load_model_artifact,
+)
+from churn_project.python.prediction_service import (
+    PredictionService,
+    categorize_risk,
+)
 
-app = FastAPI(title="Churn Analysis API", version="2.0.0")
+logger = logging.getLogger(__name__)
+
+# Global prediction service instance loaded on startup
+prediction_service: PredictionService | None = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global prediction_service
+    try:
+        pipeline, metadata, metrics = get_or_create_model()
+        prediction_service = PredictionService(pipeline=pipeline, metadata=metadata, metrics=metrics)
+        logger.info("Loaded persisted churn model on startup: %s", metadata.get("model_name"))
+    except Exception as exc:
+        logger.warning("Could not initialize prediction service on startup: %s", exc)
+    yield
+
+
+app = FastAPI(title="Churn Analysis API", version="2.0.0", lifespan=lifespan)
 app.add_middleware(
-    CORSMiddleware, allow_origins=["http://localhost:5173", "http://localhost:3000"],
-    allow_credentials=True, allow_methods=["GET"], allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -181,8 +213,50 @@ def heuristic_risk_score(df: pd.DataFrame) -> pd.Series:
     )
 
 
+class PredictResponse(BaseModel):
+    churn_probability: float
+    predicted_churn: bool
+    risk_category: str
+    threshold: float
+
+
+def get_prediction_service() -> PredictionService:
+    global prediction_service
+    if prediction_service is None:
+        prediction_service = PredictionService()
+    return prediction_service
+
+
+@app.post("/api/predict", response_model=PredictResponse)
+async def predict_churn(request: Request):
+    try:
+        payload = await request.json()
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Malformed JSON request: {exc}") from exc
+
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=422, detail="Request payload must be a JSON object")
+
+    service = get_prediction_service()
+    try:
+        result = service.predict_one(payload)
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Unexpected error during inference: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Inference error: {exc}") from exc
+
+
 @app.get("/api/ml-models")
 def ml_models():
+    # Prefer persisted metrics if available, fallback to evaluation
+    try:
+        service = get_prediction_service()
+        if service.metrics:
+            return service.metrics
+    except Exception:
+        pass
     return cached_model_evaluation()
 
 
