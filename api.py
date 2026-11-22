@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -26,11 +26,24 @@ from churn_project.python.prediction_service import (
     PredictionService,
     categorize_risk,
 )
+from churn_project.python.risk_service import (
+    RiskSegmentationService,
+)
 
 logger = logging.getLogger(__name__)
 
-# Global prediction service instance loaded on startup
+# Global prediction and risk service instances loaded on startup
 prediction_service: PredictionService | None = None
+risk_service: RiskSegmentationService | None = None
+
+
+def get_risk_service() -> RiskSegmentationService:
+    global risk_service
+    if risk_service is None:
+        p_svc = get_prediction_service()
+        df = load_dataset()
+        risk_service = RiskSegmentationService(prediction_service=p_svc, df=df)
+    return risk_service
 
 
 @asynccontextmanager
@@ -269,6 +282,78 @@ def model_diagnostics(threshold: float | None = Query(default=None, ge=0.0, le=1
     y_test, probs, default_threshold = get_evaluation_ground_truth_and_probs()
     op_threshold = threshold if threshold is not None else default_threshold
     return compute_comprehensive_diagnostics(y_test, probs, op_threshold)
+
+
+@app.get("/api/risk-distribution")
+def risk_distribution():
+    return get_risk_service().get_risk_distribution()
+
+
+@app.get("/api/action-center/summary")
+def action_center_summary():
+    return get_risk_service().get_action_center_summary()
+
+
+@app.get("/api/action-center/customers")
+def action_center_customers(
+    risk_category: str | None = Query(default=None),
+    contract: str | None = Query(default=None),
+    payment_method: str | None = Query(default=None),
+    min_tenure: int | None = Query(default=None, ge=0),
+    max_tenure: int | None = Query(default=None, le=100),
+    min_monthly_charges: float | None = Query(default=None, ge=0),
+    max_monthly_charges: float | None = Query(default=None),
+    search: str | None = Query(default=None),
+    sort_by: str = Query(default="churn_probability"),
+    ascending: bool = Query(default=False),
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+):
+    customers, total = get_risk_service().filter_customers(
+        risk_category=risk_category,
+        contract=contract,
+        payment_method=payment_method,
+        min_tenure=min_tenure,
+        max_tenure=max_tenure,
+        min_monthly_charges=min_monthly_charges,
+        max_monthly_charges=max_monthly_charges,
+        search=search,
+        sort_by=sort_by,
+        ascending=ascending,
+        limit=limit,
+        offset=offset,
+    )
+    return {"customers": customers, "total": total, "limit": limit, "offset": offset}
+
+
+@app.get("/api/action-center/export-csv")
+def action_center_export_csv(
+    risk_category: str | None = Query(default=None),
+    contract: str | None = Query(default=None),
+    payment_method: str | None = Query(default=None),
+    min_tenure: int | None = Query(default=None),
+    max_tenure: int | None = Query(default=None),
+    min_monthly_charges: float | None = Query(default=None),
+    max_monthly_charges: float | None = Query(default=None),
+    search: str | None = Query(default=None),
+    limit: int = Query(default=5000, ge=1, le=10000),
+):
+    csv_data = get_risk_service().export_csv(
+        risk_category=risk_category,
+        contract=contract,
+        payment_method=payment_method,
+        min_tenure=min_tenure,
+        max_tenure=max_tenure,
+        min_monthly_charges=min_monthly_charges,
+        max_monthly_charges=max_monthly_charges,
+        search=search,
+        limit=limit,
+    )
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=high_risk_customers.csv"},
+    )
 
 
 @app.get("/api/ml-models")
